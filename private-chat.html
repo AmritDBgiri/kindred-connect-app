@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Private Chat</title>
+    <title>Private Chat - KindredConnect</title>
     <link rel="stylesheet" href="/style.css">
-    </head>
+</head>
 <body>
     <header>
         <nav>
@@ -29,7 +29,7 @@
     
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io("http://localhost:3000");
+        const socket = io(); // Connect to the server
 
         const form = document.getElementById('chat-form');
         const textInput = document.getElementById('chat-input');
@@ -37,7 +37,6 @@
         const attachBtn = document.getElementById('attach-file-btn');
         const messages = document.getElementById('messages');
         
-        // Get the friend's ID from the URL to create a unique room
         const friendId = window.location.pathname.split('/')[3];
         
         // Tell the server we want to join this private chat room
@@ -72,7 +71,13 @@
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    // If server responds with an error, show it
+                    return response.json().then(err => Promise.reject(err));
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.imageUrl) {
                     // 2. Once uploaded, send the URL as a private message
@@ -83,7 +88,8 @@
             })
             .catch(error => {
                 console.error('Error uploading image:', error);
-                alert('Image upload failed.');
+                // Show an alert to the user if the upload fails
+                alert(`Image upload failed: ${error.message || 'Check server logs.'}`);
             });
             // Clear the input so you can select the same file again
             e.target.value = '';
@@ -96,18 +102,15 @@
 
         function appendMessage(msg) {
             const item = document.createElement('li');
-            
-            // A simple check to see if the message text is an image URL
             const isImageUrl = msg.text.startsWith('https://res.cloudinary.com');
 
-            // Add CSS classes to align the message left or right
             item.classList.add('chat-message');
             item.classList.add(msg.sender === 'Me' ? 'message-self' : 'message-other');
 
             if (isImageUrl) {
                 item.innerHTML = `
                     <div class="sender">${msg.sender}</div>
-                    <img src="${msg.text}" alt="Shared image" style="max-width: 250px; border-radius: 8px;">
+                    <img src="${msg.text}" alt="Shared image" style="max-width: 250px; border-radius: 8px; margin-top: 5px;">
                 `;
             } else {
                 item.innerHTML = `
