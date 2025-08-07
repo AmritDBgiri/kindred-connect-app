@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Private Chat</title>
+    <link rel="stylesheet" href="/style.css">
+    </head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">KindredConnect</div>
+            <ul>
+                <li><a href="/dashboard">Dashboard</a></li>
+                <li><a href="/logout">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="chat-container">
+        <ul id="messages"></ul>
+        <form id="chat-form" action="">
+            <input type="file" id="image-input" accept="image/*" style="display: none;">
+            <button type="button" id="attach-file-btn" title="Attach Image">📎</button>
+            <input id="chat-input" autocomplete="off" placeholder="Type a message..." />
+            <button type="submit">Send</button>
+        </form>
+    </main>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io("http://localhost:3000");
+
+        const form = document.getElementById('chat-form');
+        const textInput = document.getElementById('chat-input');
+        const imageInput = document.getElementById('image-input');
+        const attachBtn = document.getElementById('attach-file-btn');
+        const messages = document.getElementById('messages');
+        
+        // Get the friend's ID from the URL to create a unique room
+        const friendId = window.location.pathname.split('/')[3];
+        
+        // Tell the server we want to join this private chat room
+        socket.emit('join private chat', friendId);
+
+        // When the attachment button is clicked, trigger the hidden file input
+        attachBtn.addEventListener('click', () => {
+            imageInput.click();
+        });
+
+        // Handle text message submission
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (textInput.value) {
+                const message = { friendId: friendId, text: textInput.value };
+                socket.emit('private message', message);
+                appendMessage({ sender: 'Me', text: textInput.value });
+                textInput.value = '';
+            }
+        });
+
+        // Handle image file selection
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            // 1. Upload the image to our server
+            fetch('/api/upload/image', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.imageUrl) {
+                    // 2. Once uploaded, send the URL as a private message
+                    const message = { friendId: friendId, text: data.imageUrl };
+                    socket.emit('private message', message);
+                    appendMessage({ sender: 'Me', text: data.imageUrl });
+                }
+            })
+            .catch(error => {
+                console.error('Error uploading image:', error);
+                alert('Image upload failed.');
+            });
+            // Clear the input so you can select the same file again
+            e.target.value = '';
+        });
+
+        // Listen for incoming private messages
+        socket.on('private message', function(msg) {
+            appendMessage(msg);
+        });
+
+        function appendMessage(msg) {
+            const item = document.createElement('li');
+            
+            // A simple check to see if the message text is an image URL
+            const isImageUrl = msg.text.startsWith('https://res.cloudinary.com');
+
+            // Add CSS classes to align the message left or right
+            item.classList.add('chat-message');
+            item.classList.add(msg.sender === 'Me' ? 'message-self' : 'message-other');
+
+            if (isImageUrl) {
+                item.innerHTML = `
+                    <div class="sender">${msg.sender}</div>
+                    <img src="${msg.text}" alt="Shared image" style="max-width: 250px; border-radius: 8px;">
+                `;
+            } else {
+                item.innerHTML = `
+                    <div class="sender">${msg.sender}</div>
+                    <div>${msg.text}</div>
+                `;
+            }
+            
+            messages.appendChild(item);
+            messages.scrollTop = messages.scrollHeight;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community Chat - KindredConnect</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">KindredConnect</div>
+            <ul>
+                <li><a href="/dashboard">Dashboard</a></li>
+                <li><a href="/members">Members</a></li>
+                <li><a href="/logout">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="chat-container">
+        <ul id="messages"></ul>
+        <form id="chat-form" action="">
+            <input id="chat-input" autocomplete="off" placeholder="Type a message..." /><button>Send</button>
+        </form>
+    </main>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+    const socket = io("http://localhost:3000");
+
+    const form = document.getElementById('chat-form');
+    const input = document.getElementById('chat-input');
+    const messages = document.getElementById('messages');
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (input.value) {
+            socket.emit('chat message', input.value);
+            input.value = '';
+        }
+    });
+
+    // Listen for the updated chat message object
+    socket.on('chat message', function(msg) {
+        const item = document.createElement('li');
+        item.classList.add('chat-message', 'message-other');
+
+        // Create a link (<a>) for the sender's name
+        const senderLink = document.createElement('a');
+        senderLink.href = `/user/${msg.senderId}`; // Set the link to the user's profile
+        senderLink.textContent = msg.senderName;
+        senderLink.classList.add('sender');
+        senderLink.style.textDecoration = 'underline';
+        senderLink.style.color = '#337ab7';
+
+        const textSpan = document.createElement('div');
+        textSpan.textContent = msg.text;
+
+        item.appendChild(senderLink);
+        item.appendChild(textSpan);
+        
+        messages.appendChild(item);
+        messages.scrollTop = messages.scrollHeight;
+    });
+</script>
+</body>
+</html>

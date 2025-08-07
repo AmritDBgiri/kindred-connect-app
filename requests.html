@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friend Requests - KindredConnect</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .request-card { display: flex; justify-content: space-between; align-items: center; background-color: #fff; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+        .request-card-info { flex-grow: 1; }
+        .request-card-actions button { margin-left: 0.5rem; }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">KindredConnect</div>
+            <ul>
+                <li><a href="/dashboard">Dashboard</a></li>
+                <li><a href="/logout">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="container" style="padding: 2rem;">
+        <h2>Incoming Friend Requests</h2>
+        <div id="request-list">
+            <p>Loading requests...</p>
+        </div>
+    </main>
+
+    <footer>
+        <p>© 2025 AmritKumarGiri. All Rights Reserved.</p>
+    </footer>
+    <script src="/requests.js"></script>
+</body>
+</html>
