@@ -12,7 +12,14 @@ const cloudinary = require('cloudinary').v2;
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+
+// UPDATED: Create a new Socket.IO server with CORS configuration for deployment
+const io = new Server(server, {
+  cors: {
+    origin: "https://kindred-connect-app.onrender.com", // <-- IMPORTANT: Make sure this is your live URL
+    methods: ["GET", "POST"]
+  }
+});
 
 // --- CONFIGURATIONS ---
 cloudinary.config({ 
@@ -25,7 +32,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 const PORT = process.env.PORT || 3000;
-const connectionString = 'mongodb+srv://kindred_user:Amrit%40123@cluster0.vxorfex.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+const connectionString = process.env.MONGO_CONNECTION_STRING; // Using environment variable
 const client = new MongoClient(connectionString);
 
 async function run() {
@@ -39,7 +46,7 @@ async function run() {
             secret: 'a-very-long-and-random-secret-for-session',
             resave: false,
             saveUninitialized: true,
-            cookie: { secure: false }
+            cookie: { secure: process.env.NODE_ENV === 'production' } // Secure cookie in production
         });
 
         app.use(express.static(__dirname));
