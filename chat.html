@@ -26,13 +26,16 @@
     </main>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script>
-    const socket = io("http://localhost:3000");
+<script>
+    // This script should be inside chat.html
+
+    const socket = io(); // Connect to the server
 
     const form = document.getElementById('chat-form');
     const input = document.getElementById('chat-input');
     const messages = document.getElementById('messages');
 
+    // Send a 'chat message' event for the global chat
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         if (input.value) {
@@ -41,18 +44,16 @@
         }
     });
 
-    // Listen for the updated chat message object
+    // Listen for 'chat message' events
     socket.on('chat message', function(msg) {
         const item = document.createElement('li');
         item.classList.add('chat-message', 'message-other');
 
-        // Create a link (<a>) for the sender's name
         const senderLink = document.createElement('a');
-        senderLink.href = `/user/${msg.senderId}`; // Set the link to the user's profile
+        senderLink.href = `/user/${msg.senderId}`;
         senderLink.textContent = msg.senderName;
         senderLink.classList.add('sender');
         senderLink.style.textDecoration = 'underline';
-        senderLink.style.color = '#337ab7';
 
         const textSpan = document.createElement('div');
         textSpan.textContent = msg.text;
