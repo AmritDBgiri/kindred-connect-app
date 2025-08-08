@@ -181,24 +181,41 @@ const sessionMiddleware = session({
         });
 
         // --- SOCKET.IO LOGIC ---
-        io.on('connection', (socket) => {
-            const session = socket.request.session;
-            const user = session.user;
-            if (!user) return;
-            const userName = user.name;
-            const userId = user._id.toString();
-            socket.on('join private chat', (friendId) => {
-                const roomName = [userId, friendId].sort().join('-');
-                socket.join(roomName);
-            });
-            socket.on('private message', (data) => {
-                const roomName = [userId, data.friendId].sort().join('-');
-                socket.to(roomName).emit('private message', { sender: userName, text: data.text });
-            });
-            socket.on('chat message', (msg) => {
-                io.emit('chat message', { senderId: user._id, senderName: userName, text: msg });
-            });
+        // --- SOCKET.IO LOGIC ---
+io.on('connection', (socket) => {
+    const session = socket.request.session;
+    const user = session.user;
+    if (!user) return;
+    const userName = user.name;
+    const userId = user._id.toString();
+
+    // --- Private Chat Logic ---
+    socket.on('join private chat', (friendId) => {
+        const roomName = [userId, friendId].sort().join('-');
+        socket.join(roomName);
+    });
+
+    socket.on('private message', (data) => {
+        const roomName = [userId, data.friendId].sort().join('-');
+        // Add timestamp to the message object
+        socket.to(roomName).emit('private message', { 
+            sender: userName, 
+            text: data.text,
+            timestamp: new Date() 
         });
+    });
+
+    // --- Global Chat Logic ---
+    socket.on('chat message', (msg) => {
+        // Add timestamp to the message object
+        io.emit('chat message', { 
+            senderId: user._id, 
+            senderName: userName, 
+            text: msg,
+            timestamp: new Date()
+        });
+    });
+});
 
         // --- START SERVER ---
         server.listen(PORT, () => console.log(`Server is running on http://localhost:${PORT}`));

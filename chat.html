@@ -27,24 +27,21 @@
 
     <script src="/socket.io/socket.io.js"></script>
 <script>
-    // This script should be inside chat.html
-
-    const socket = io(); // Connect to the server
-
+    const socket = io();
     const form = document.getElementById('chat-form');
     const input = document.getElementById('chat-input');
     const messages = document.getElementById('messages');
 
-    // Send a 'chat message' event for the global chat
+    // Corrected event listener for the form
     form.addEventListener('submit', function(e) {
-        e.preventDefault();
+        e.preventDefault(); // Stops the page from refreshing
         if (input.value) {
             socket.emit('chat message', input.value);
             input.value = '';
         }
     });
 
-    // Listen for 'chat message' events
+    // Listens for incoming broadcasted messages
     socket.on('chat message', function(msg) {
         const item = document.createElement('li');
         item.classList.add('chat-message', 'message-other');
@@ -54,11 +51,20 @@
         senderLink.textContent = msg.senderName;
         senderLink.classList.add('sender');
         senderLink.style.textDecoration = 'underline';
+        senderLink.style.color = '#337ab7';
+
+        const timeSpan = document.createElement('span');
+        timeSpan.classList.add('timestamp');
+        timeSpan.textContent = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
         const textSpan = document.createElement('div');
         textSpan.textContent = msg.text;
 
-        item.appendChild(senderLink);
+        const headerDiv = document.createElement('div');
+        headerDiv.appendChild(senderLink);
+        headerDiv.appendChild(timeSpan);
+
+        item.appendChild(headerDiv);
         item.appendChild(textSpan);
         
         messages.appendChild(item);
