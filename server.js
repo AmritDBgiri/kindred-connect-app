@@ -9,9 +9,10 @@ const http = require('http');
 const { Server } = require("socket.io");
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
-const MongoStore = require('connect-mongo'); // Import MongoStore
+const MongoStore = require('connect-mongo');
 
 const app = express();
+app.set('trust proxy', 1); // <-- CRUCIAL LINE FOR DEPLOYMENT
 const server = http.createServer(app);
 
 // --- CONFIGURATIONS ---
@@ -43,7 +44,6 @@ async function run() {
         const db = client.db("KindredConnectDB");
         const usersCollection = db.collection("users");
 
-        // UPDATED: Session configuration with MongoStore
         const sessionMiddleware = session({
             secret: 'a-very-long-and-random-secret-for-session',
             resave: false,
@@ -54,7 +54,7 @@ async function run() {
             }),
             cookie: { 
                 secure: process.env.NODE_ENV === 'production',
-                maxAge: 1000 * 60 * 60 * 24 // Cookie expires in 1 day
+                maxAge: 1000 * 60 * 60 * 24 
             }
         });
 
