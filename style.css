@@ -269,3 +269,9 @@ footer {
     color: #fff;
     align-self: flex-start; /* Changed to start for consistency */
 }
+
+.chat-message .timestamp {
+    font-size: 0.75rem;
+    color: #999;
+    margin-left: 0.5rem;
+}

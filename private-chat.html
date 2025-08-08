@@ -29,7 +29,7 @@
     
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io(); // Connect to the server
+        const socket = io();
 
         const form = document.getElementById('chat-form');
         const textInput = document.getElementById('chat-input');
@@ -49,7 +49,7 @@
 
         // Handle text message submission
         form.addEventListener('submit', function(e) {
-            e.preventDefault();
+            e.preventDefault(); // This is the line that stops the page from refreshing
             if (textInput.value) {
                 const message = { friendId: friendId, text: textInput.value };
                 socket.emit('private message', message);
@@ -62,25 +62,19 @@
         imageInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
-
             const formData = new FormData();
             formData.append('image', file);
 
-            // 1. Upload the image to our server
             fetch('/api/upload/image', {
                 method: 'POST',
                 body: formData
             })
             .then(response => {
-                if (!response.ok) {
-                    // If server responds with an error, show it
-                    return response.json().then(err => Promise.reject(err));
-                }
+                if (!response.ok) return response.json().then(err => Promise.reject(err));
                 return response.json();
             })
             .then(data => {
                 if (data.imageUrl) {
-                    // 2. Once uploaded, send the URL as a private message
                     const message = { friendId: friendId, text: data.imageUrl };
                     socket.emit('private message', message);
                     appendMessage({ sender: 'Me', text: data.imageUrl });
@@ -88,10 +82,8 @@
             })
             .catch(error => {
                 console.error('Error uploading image:', error);
-                // Show an alert to the user if the upload fails
                 alert(`Image upload failed: ${error.message || 'Check server logs.'}`);
             });
-            // Clear the input so you can select the same file again
             e.target.value = '';
         });
 
@@ -107,16 +99,33 @@
             item.classList.add('chat-message');
             item.classList.add(msg.sender === 'Me' ? 'message-self' : 'message-other');
 
+            const senderSpan = document.createElement('div');
+            senderSpan.classList.add('sender');
+            senderSpan.textContent = msg.sender;
+
+            const timeSpan = document.createElement('span');
+            timeSpan.classList.add('timestamp');
+            const timestamp = msg.timestamp ? new Date(msg.timestamp) : new Date();
+            timeSpan.textContent = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const headerDiv = document.createElement('div');
+            headerDiv.appendChild(senderSpan);
+            headerDiv.appendChild(timeSpan);
+            
+            item.appendChild(headerDiv);
+
             if (isImageUrl) {
-                item.innerHTML = `
-                    <div class="sender">${msg.sender}</div>
-                    <img src="${msg.text}" alt="Shared image" style="max-width: 250px; border-radius: 8px; margin-top: 5px;">
-                `;
+                const img = document.createElement('img');
+                img.src = msg.text;
+                img.alt = "Shared image";
+                img.style.maxWidth = '250px';
+                img.style.borderRadius = '8px';
+                img.style.marginTop = '5px';
+                item.appendChild(img);
             } else {
-                item.innerHTML = `
-                    <div class="sender">${msg.sender}</div>
-                    <div>${msg.text}</div>
-                `;
+                const textDiv = document.createElement('div');
+                textDiv.textContent = msg.text;
+                item.appendChild(textDiv);
             }
             
             messages.appendChild(item);
