@@ -44,19 +44,23 @@ async function run() {
         const db = client.db("KindredConnectDB");
         const usersCollection = db.collection("users");
 
-        const sessionMiddleware = session({
-            secret: 'a-very-long-and-random-secret-for-session',
-            resave: false,
-            saveUninitialized: true,
-            store: MongoStore.create({
-                mongoUrl: connectionString,
-                collectionName: 'sessions'
-            }),
-            cookie: { 
-                secure: process.env.NODE_ENV === 'production',
-                maxAge: 1000 * 60 * 60 * 24 
-            }
-        });
+        // UPDATED: Production-grade session configuration
+const sessionMiddleware = session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false, // More secure: only save sessions for logged-in users
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGO_CONNECTION_STRING,
+        collectionName: 'sessions',
+        ttl: 24 * 60 * 60 // Sessions will expire after 1 day
+    }),
+    cookie: { 
+    secure: process.env.NODE_ENV === 'production', // This is the fix
+    httpOnly: true,
+    maxAge: 1000 * 60 * 60 * 24,
+    sameSite: 'lax'
+}
+});
 
         app.use(express.static(__dirname));
         app.use(express.urlencoded({ extended: true }));
