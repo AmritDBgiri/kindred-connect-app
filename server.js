@@ -9,19 +9,20 @@ const http = require('http');
 const { Server } = require("socket.io");
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
+const MongoStore = require('connect-mongo'); // Import MongoStore
 
 const app = express();
 const server = http.createServer(app);
 
-// UPDATED: Create a new Socket.IO server with CORS configuration for deployment
+// --- CONFIGURATIONS ---
+
 const io = new Server(server, {
   cors: {
-    origin: "https://kindred-connect-app.onrender.com", // <-- IMPORTANT: Make sure this is your live URL
+    origin: "https://kindred-connect-app.onrender.com", // Make sure this is your live URL
     methods: ["GET", "POST"]
   }
 });
 
-// --- CONFIGURATIONS ---
 cloudinary.config({ 
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
   api_key: process.env.CLOUDINARY_API_KEY, 
@@ -32,7 +33,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 const PORT = process.env.PORT || 3000;
-const connectionString = process.env.MONGO_CONNECTION_STRING; // Using environment variable
+const connectionString = process.env.MONGO_CONNECTION_STRING;
 const client = new MongoClient(connectionString);
 
 async function run() {
@@ -42,11 +43,19 @@ async function run() {
         const db = client.db("KindredConnectDB");
         const usersCollection = db.collection("users");
 
+        // UPDATED: Session configuration with MongoStore
         const sessionMiddleware = session({
             secret: 'a-very-long-and-random-secret-for-session',
             resave: false,
             saveUninitialized: true,
-            cookie: { secure: process.env.NODE_ENV === 'production' } // Secure cookie in production
+            store: MongoStore.create({
+                mongoUrl: connectionString,
+                collectionName: 'sessions'
+            }),
+            cookie: { 
+                secure: process.env.NODE_ENV === 'production',
+                maxAge: 1000 * 60 * 60 * 24 // Cookie expires in 1 day
+            }
         });
 
         app.use(express.static(__dirname));
